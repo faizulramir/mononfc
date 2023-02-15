@@ -10,6 +10,7 @@ import { Subscription } from 'rxjs/Rx';
 export class HomePage {
 
   display = '0';
+  disableButton = false;
   firstval: number = null;
   operator: any = null;
   newcursor = false;
@@ -23,13 +24,14 @@ export class HomePage {
   constructor(private nfc: NFC, public platform: Platform, public ndef: Ndef,  public toastCtrl: ToastController, public alertCtrl: AlertController, public actionSheetCtrl: ActionSheetController) {}
 
   onNfc(type: any) {
+    this.disableButton = true
     this.checkPlatform(type)
   }
 
   checkPlatform(type:any) {
     this.platform.ready().then(() => {
       if (this.platform.is('android')) {
-        console.log("nfc: running on Android!");
+        //console.log("nfc: running on Android!");
         this.nfc.enabled().then((flag) => {
           this.isScan = true;
           this.scanNFC(type);
@@ -38,6 +40,7 @@ export class HomePage {
           setTimeout(()=> {
             this.nfc.showSettings();
             this.cancelScan();
+            this.disableButton = false
           }, 1000);  
         });        
       }
@@ -53,8 +56,12 @@ export class HomePage {
       this.nfc.write(message);
       this.showToast("NFC:Success!");
       this.display = total.toString();
+      this.cancelScan();
+      this.disableButton = false
     } catch(e) {
       this.showToast("NFC:write_error");
+      this.cancelScan();
+      this.disableButton = false
     }
   }
 
@@ -75,6 +82,8 @@ export class HomePage {
           return this.onNfcRun(this.display);
         } else if (type == 'writeInit') {
           return this.onNfcRun('1500');
+        } else if (type == 'writePassGo') {
+          return this.onNfcRun('200');
         }
       },
       (err) => { 
@@ -88,17 +97,17 @@ export class HomePage {
   }
 
   androidNdefListenerSuccess(data) {
-    console.log("androidNdefListenerSuccess: data... ", data);
+    //console.log("androidNdefListenerSuccess: data... ", data);
     if (data && data.tag && data.tag.id) {
-      console.log("data.tag: ", data.tag);
+      //console.log("data.tag: ", data.tag);
       let tagID = this.nfc.bytesToHexString(data.tag.id);
-      console.log("data.tag.id: ", data.tag.id);
+      //console.log("data.tag.id: ", data.tag.id);
 
       if (tagID) {
         if (data.tag.ndefMessage){
-          console.log("data.tag.ndefMessage: ", data.tag.ndefMessage);
+          //console.log("data.tag.ndefMessage: ", data.tag.ndefMessage);
           let payload = data.tag.ndefMessage[0].payload; 
-          console.log("data.tag.ndefMessage.payload: ", data.tag.ndefMessage[0].payload); 
+          //console.log("data.tag.ndefMessage.payload: ", data.tag.ndefMessage[0].payload); 
           if (payload){
             let tagContent:string = this.nfc.bytesToString(payload);
             console.log("tagContent... [", tagContent+"]");
@@ -114,32 +123,33 @@ export class HomePage {
     }
     else { this.showToast('ERR: NFC_DATA_NOT_DETECTED'); }
 
-    console.log("nfc: tagContent... ERR");
+    //console.log("nfc: tagContent... ERR");
     return null;
   }  
 
   nfcReadNdef(event) {
     this.ionViewWillLeave();
 
-    console.log("nfcReadNdef: Read NDEF... ", event);
+    //console.log("nfcReadNdef: Read NDEF... ", event);
     if (event && event.tag) {
-      console.log("nfcReadNdef: Read NDEF... tag ", event.tag);
+      //console.log("nfcReadNdef: Read NDEF... tag ", event.tag);
       let ref:string = this.androidNdefListenerSuccess(event);
       var newarr = ref.split("en");
       this.display = newarr[1].toString();
+      this.disableButton = false
     }
       
   }
 
   public stopNFC(){
-    console.log('stopNFC()...');
+    //console.log('stopNFC()...');
     if (this.subscription) this.subscription.unsubscribe();
     if (this.subscriptions) {
       let count = 0;
       this.subscriptions.forEach(sub => { 
         ++count;
         sub.unsubscribe();
-        console.log("stopNFC: unsubscribe... ", count);
+        //console.log("stopNFC: unsubscribe... ", count);
       });
       this.subscriptions = [];
     }
@@ -151,7 +161,7 @@ export class HomePage {
   }
 
   cancelScan() {
-    console.log("cancelScan() ...");
+    //console.log("cancelScan() ...");
     this.ionViewWillLeave();
     this.ionViewDidEnter();
   }

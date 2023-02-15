@@ -69,7 +69,7 @@
           <button ion-button class="round" color="dark" (click)="click(',')">,</button>
         </ion-col>
         <ion-col>
-          <button ion-button class="round" color="warning" (click)="click('=')">=</button>
+          <button ion-button class="round" color="danger" (click)="click('=')">=</button>
         </ion-col>
       </ion-row>
     </ion-grid>
@@ -77,17 +77,22 @@
     <ion-grid>
         <ion-row>
           <ion-col>
-            <button ion-button color="dark" (click)="onNfc('read')" class="double-width square">Balance</button>
+            <button ion-button color="dark" (click)="onNfc('read')" class="double-width square" [disabled]="disableButton">Balance</button>
           </ion-col>
         </ion-row>
         <ion-row>
           <ion-col>
-            <button ion-button color="dark" (click)="onNfc('write')" class="double-width square">Deduct/Add Money</button>
+            <button ion-button color="dark" (click)="onNfc('write')" class="double-width square" [disabled]="disableButton">Deduct/Add Money</button>
           </ion-col>
         </ion-row>
         <ion-row>
           <ion-col>
-            <button ion-button color="dark" (click)="onNfc('writeInit')" class="double-width square">Initial Money</button>
+            <button ion-button color="dark" (click)="onNfc('writeInit')" class="double-width square" [disabled]="disableButton">Initial Money</button>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>
+            <button ion-button color="dark" (click)="onNfc('writePassGo')" class="double-width square" [disabled]="disableButton">Pass Go</button>
           </ion-col>
         </ion-row>
         <ion-row>
