@@ -82,7 +82,10 @@
         </ion-row>
         <ion-row>
           <ion-col>
-            <button ion-button color="dark" (click)="onNfc('write')" class="double-width square" [disabled]="disableButton">Deduct/Add Money</button>
+            <button ion-button color="dark" (click)="onNfc('writeAdd')" class="double-width square" [disabled]="disableButton">Add Money</button>
+          </ion-col>
+          <ion-col>
+            <button ion-button color="dark" (click)="onNfc('writeDeduct')" class="double-width square" [disabled]="disableButton">Deduct Money</button>
           </ion-col>
         </ion-row>
         <ion-row>

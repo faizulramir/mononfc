@@ -48,6 +48,7 @@ export class HomePage {
   }
 
   public onNfcRun(total) {
+    total = total.toString();
     var message = [
       this.ndef.textRecord(total)
     ];
@@ -76,15 +77,16 @@ export class HomePage {
       (data: Event) => {
         if (this.subscription) this.subscription.unsubscribe();
         this.subscription = null;
-        if (type == 'read') {
-          return this.nfcReadNdef(data);
-        } else if (type == 'write') {
-          return this.onNfcRun(this.display);
-        } else if (type == 'writeInit') {
-          return this.onNfcRun('1500');
-        } else if (type == 'writePassGo') {
-          return this.onNfcRun('200');
-        }
+        return this.nfcReadNdef(data, type);
+        // if (type == 'read') {
+        //   return this.nfcReadNdef(data);
+        // } else if (type == 'write') {
+        //   return this.onNfcRun(this.display);
+        // } else if (type == 'writeInit') {
+        //   return this.onNfcRun('1500');
+        // } else if (type == 'writePassGo') {
+        //   return this.onNfcRun('200');
+        // }
       },
       (err) => { 
         this.ionViewWillLeave();
@@ -128,7 +130,7 @@ export class HomePage {
     return null;
   }  
 
-  nfcReadNdef(event) {
+  nfcReadNdef(event, type) {
     this.ionViewWillLeave();
 
     //console.log("nfcReadNdef: Read NDEF... ", event);
@@ -136,7 +138,18 @@ export class HomePage {
       //console.log("nfcReadNdef: Read NDEF... tag ", event.tag);
       let ref:string = this.androidNdefListenerSuccess(event);
       var newarr = ref.split("en");
-      this.display = newarr[1].toString();
+      if (type == 'read') {
+        this.display = newarr[1].toString();
+      } else if (type == 'writeAdd') {
+        return this.onNfcRun(parseInt(this.display) + parseInt(newarr[1]));
+      } else if (type == 'writeDeduct') {
+        return this.onNfcRun(parseInt(this.display) - parseInt(newarr[1]));
+      } else if (type == 'writeInit') {
+        return this.onNfcRun(1500);
+      } else if (type == 'writePassGo') {
+        return this.onNfcRun(200 + parseInt(newarr[1]));
+      }
+      
       this.disableButton = false
     }
       
