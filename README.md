@@ -12,7 +12,7 @@ Basically a NFC banker apps for Monopoly board games. No more money-on-hand! Go 
   ```
 
 # Sample Image
-<img src="https://github.com/faizulramir/mononfc/blob/main/img/Screenshot_1676456938.png" width="250">
+<img src="https://github.com/faizulramir/mononfc/blob/main/img/ss.png" width="250">
 
 # Supported NFC
 1. NTAG21*
