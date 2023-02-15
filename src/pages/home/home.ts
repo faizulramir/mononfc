@@ -89,6 +89,7 @@ export class HomePage {
       (err) => { 
         this.ionViewWillLeave();
         this.showToast("NFC:Scan Error... "+err);
+        this.disableButton = false
         return null;
       }
     );
