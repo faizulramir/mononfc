@@ -10,7 +10,10 @@ Basically a NFC banker apps for Monopoly board games. No more money-on-hand! Go 
   ionic cordova run android -l -c (livereload on emulator and consolelog)
   ionic cordova build android (build *.apk)
   ```
- 
+
+# Sample Image
+<img src="https://github.com/faizulramir/mononfc/blob/main/img/Screenshot_1676456938.png" width="250">
+
 # Supported NFC
 1. NTAG21*
 
