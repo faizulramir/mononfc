@@ -1,31 +1,137 @@
 import { Component } from '@angular/core';
 import { NFC, Ndef } from '@ionic-native/nfc';
-import { Platform, ToastController, AlertController, ActionSheetController } from 'ionic-angular';
+import { Platform, NavController, ToastController, AlertController, ActionSheetController } from 'ionic-angular';
 import { Subscription } from 'rxjs/Rx';
+import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
 
 @Component({
   selector: 'page-home',
   templateUrl: 'home.html'
 })
 export class HomePage {
-
-  display = '0';
+  name:string;
   disableButton = false;
-  firstval: number = null;
-  operator: any = null;
-  newcursor = false;
-  isc = false;
-  iscomma = false;
   isScan: boolean = false;
   ndeflistener: any;
   subscription: Subscription = new Subscription(); //manage on/off nfc scan --first time
   subscriptions: Array<Subscription> = new Array<Subscription>(); //manage on/off nfc scan
+  isReg  = false;
+  results = [];
+  constructor(private sqlite: SQLite, public navCtrl: NavController, private nfc: NFC, public platform: Platform, public ndef: Ndef,  public toastCtrl: ToastController, public alertCtrl: AlertController, public actionSheetCtrl: ActionSheetController) {}
 
-  constructor(private nfc: NFC, public platform: Platform, public ndef: Ndef,  public toastCtrl: ToastController, public alertCtrl: AlertController, public actionSheetCtrl: ActionSheetController) {}
+  ionViewWillEnter (){
+    this.initializeApp();
+  }
+
+  initializeApp() {
+    this.sqlite.create({
+      name: 'data.db',
+      location: 'default'
+    })
+      .then((db: SQLiteObject) => {
+        db.executeSql('CREATE TABLE IF NOT EXISTS bank(id INTEGER PRIMARY KEY, amount VARCHAR(255), action VARCHAR(255))', [])
+          .then(() => console.log('Executed SQL'))
+          .catch(e => console.log(JSON.stringify(e, null, 4)));
+
+        db.executeSql('CREATE TABLE IF NOT EXISTS player(id INTEGER PRIMARY KEY, name VARCHAR(255))', [])
+          .then(() => console.log('Executed SQL'))
+          .catch(e => console.log(JSON.stringify(e, null, 4)));
+        
+        db.executeSql('SELECT * FROM player', [])
+          .then((data) => {
+            if (data) {
+              let array1 = [];
+
+              for (let i = 0; i < data.rows.length; i++) {
+                let item = data.rows.item(i);
+                // do something with it
+                array1.push(item);
+              }
+              if (array1.length > 0)  {
+                this.isReg = true
+              }
+            }
+          })
+          .catch(e => console.log(JSON.stringify(e, null, 4)));
+      })
+      .catch(e => console.log(JSON.stringify(e, null, 4)));   
+  }
 
   onNfc(type: any) {
     this.disableButton = true
-    this.checkPlatform(type)
+    if (type == 'register')  {
+      this.checkPlatform(type)
+    } else if (type == 'play') {
+      this.navCtrl.push('PlayPage', { animate: true, direction: "forward" });
+    }
+  }
+
+  getData() {
+    this.sqlite.create({
+      name: 'data.db',
+      location: 'default'
+    })
+      .then((db: SQLiteObject) => {
+        db.executeSql('SELECT * FROM player', [])
+          .then((data) => {
+            if (data) {
+              let array1 = [];
+
+              for (let i = 0; i < data.rows.length; i++) {
+                let item = data.rows.item(i);
+                // do something with it
+                array1.push(item);
+              }
+              if (array1.length > 0)  {
+                this.isReg = true
+              }
+            }
+          })
+          .catch(e => console.log(JSON.stringify(e, null, 4)));
+      })
+      .catch(e => console.log(JSON.stringify(e, null, 4)));
+  }
+
+  createPlayer() {
+    this.sqlite.create({
+      name: 'data.db',
+      location: 'default'
+    })
+      .then((db: SQLiteObject) => {
+        let query = 'INSERT INTO player (name) VALUES ("Player")'
+        if (this.name !== null && this.name !== '') {
+          query = 'INSERT INTO player (name) VALUES ("'+ this.name +'")'
+        }
+        db.executeSql(query, [])
+          .then((data) => console.log(JSON.stringify(data, null, 4)))
+          .catch(e => console.log(JSON.stringify(e, null, 4)));
+
+        db.executeSql('INSERT INTO bank (amount, action) VALUES ("1500", "Initial Money")', [])
+          .then((data) => console.log(JSON.stringify(data, null, 4)))
+          .catch(e => console.log(JSON.stringify(e, null, 4)));
+      })
+      .catch(e => console.log(JSON.stringify(e, null, 4)));  
+  }
+
+  newGame() {
+    this.disableButton = false
+    this.isScan = false
+    this.isReg = false
+
+    this.sqlite.create({
+      name: 'data.db',
+      location: 'default'
+    })
+      .then((db: SQLiteObject) => {
+        db.executeSql('DELETE FROM player')
+          .then((data) => console.log(JSON.stringify(data, null, 4)))
+          .catch(e => console.log(JSON.stringify(e, null, 4)));
+
+        db.executeSql('DELETE FROM bank')
+          .then((data) => console.log(JSON.stringify(data, null, 4)))
+          .catch(e => console.log(JSON.stringify(e, null, 4)));
+      })
+      .catch(e => console.log(JSON.stringify(e, null, 4)));  
   }
 
   checkPlatform(type:any) {
@@ -56,13 +162,16 @@ export class HomePage {
     try {
       this.nfc.write(message);
       this.showToast("NFC:Success!");
-      this.display = total.toString();
       this.cancelScan();
-      this.disableButton = false
+      this.disableButton = false;
+      this.createPlayer()
+      this.getData()
+      // this.navCtrl.push('PlayPage', { animate: true, direction: "forward" });
+      this.navCtrl.pop();
     } catch(e) {
       this.showToast("NFC:write_error");
       this.cancelScan();
-      this.disableButton = false
+      this.disableButton = false;
     }
   }
 
@@ -77,16 +186,9 @@ export class HomePage {
       (data: Event) => {
         if (this.subscription) this.subscription.unsubscribe();
         this.subscription = null;
-        return this.nfcReadNdef(data, type);
-        // if (type == 'read') {
-        //   return this.nfcReadNdef(data);
-        // } else if (type == 'write') {
-        //   return this.onNfcRun(this.display);
-        // } else if (type == 'writeInit') {
-        //   return this.onNfcRun('1500');
-        // } else if (type == 'writePassGo') {
-        //   return this.onNfcRun('200');
-        // }
+        if (type == 'register') {
+          return this.onNfcRun('1500');
+        }
       },
       (err) => { 
         this.ionViewWillLeave();
@@ -97,62 +199,6 @@ export class HomePage {
     );
     //this.subscription.unsubscribe();
     return null;
-  }
-
-  androidNdefListenerSuccess(data) {
-    //console.log("androidNdefListenerSuccess: data... ", data);
-    if (data && data.tag && data.tag.id) {
-      //console.log("data.tag: ", data.tag);
-      let tagID = this.nfc.bytesToHexString(data.tag.id);
-      //console.log("data.tag.id: ", data.tag.id);
-
-      if (tagID) {
-        if (data.tag.ndefMessage){
-          //console.log("data.tag.ndefMessage: ", data.tag.ndefMessage);
-          let payload = data.tag.ndefMessage[0].payload; 
-          //console.log("data.tag.ndefMessage.payload: ", data.tag.ndefMessage[0].payload); 
-          if (payload){
-            let tagContent:string = this.nfc.bytesToString(payload);
-            console.log("tagContent... [", tagContent+"]");
-            //this.showToast("Read ["+tagContent+"]");
-            this.showToast(tagContent);
-            return tagContent;
-          }
-          else { this.showToast('ERR: NFC_NDEF_PAYLOAD_NOT_DETECTED'); }
-        }
-        else { this.showToast('ERR: NFC_NDEF_MSG_NOT_DETECTED'); }
-      } 
-      else { this.showToast('ERR: NFC_TAG_ID_NOT_DETECTED'); }
-    }
-    else { this.showToast('ERR: NFC_DATA_NOT_DETECTED'); }
-
-    //console.log("nfc: tagContent... ERR");
-    return null;
-  }  
-
-  nfcReadNdef(event, type) {
-    this.ionViewWillLeave();
-
-    //console.log("nfcReadNdef: Read NDEF... ", event);
-    if (event && event.tag) {
-      //console.log("nfcReadNdef: Read NDEF... tag ", event.tag);
-      let ref:string = this.androidNdefListenerSuccess(event);
-      var newarr = ref.split("en");
-      if (type == 'read') {
-        this.display = newarr[1].toString();
-      } else if (type == 'writeAdd') {
-        return this.onNfcRun(parseInt(this.display) + parseInt(newarr[1]));
-      } else if (type == 'writeDeduct') {
-        return this.onNfcRun(parseInt(this.display) - parseInt(newarr[1]));
-      } else if (type == 'writeInit') {
-        return this.onNfcRun(1500);
-      } else if (type == 'writePassGo') {
-        return this.onNfcRun(200 + parseInt(newarr[1]));
-      }
-      
-      this.disableButton = false
-    }
-      
   }
 
   public stopNFC(){
@@ -175,9 +221,10 @@ export class HomePage {
   }
 
   cancelScan() {
-    //console.log("cancelScan() ...");
     this.ionViewWillLeave();
     this.ionViewDidEnter();
+    this.isScan = false
+    this.disableButton = false
   }
 
   ionViewWillLeave() {
@@ -194,197 +241,6 @@ export class HomePage {
         duration: 1500
       });
     toast.present(); 
-  }
-
-  click(val: any) {
-    switch (val) {
-      case 'ac':
-        this.display = '0';
-        this.firstval = null;
-        this.operator = null;
-        this.newcursor = false;
-        break;
-      case 'c':
-        this.display = '0';
-        this.isc = false;
-        break;
-      case '+/-':
-        if (Math.sign(parseInt(this.display, 0)) === 1) {
-          const sign = -Math.abs(parseInt(this.display, 0));
-          this.display = sign.toString();
-        } else if (Math.sign(parseInt(this.display, 0)) === -1) {
-          const sign = Math.abs(parseInt(this.display, 0));
-          this.display = sign.toString();
-        } else {
-          this.display = this.display;
-        }
-        break;
-      case '%':
-        this.addpercent();
-        break;
-      case ':':
-        this.addoperator(':');
-        break;
-      case 'X':
-        this.addoperator('X');
-        break;
-      case '-':
-        this.addoperator('-');
-        break;
-      case '+':
-        this.addoperator('+');
-        break;
-      case '=':
-        if (this.firstval !== null && this.operator !== null) {
-          this.calclast();
-        }
-        this.operator = null;
-        break;
-      case '0':
-        this.addnumber('0');
-        break;
-      case '1':
-        this.addnumber('1');
-        break;
-      case '2':
-        this.addnumber('2');
-        break;
-      case '3':
-        this.addnumber('3');
-        break;
-      case '4':
-        this.addnumber('4');
-        break;
-      case '5':
-        this.addnumber('5');
-        break;
-      case '6':
-        this.addnumber('6');
-        break;
-      case '7':
-        this.addnumber('7');
-        break;
-      case '8':
-        this.addnumber('8');
-        break;
-      case '9':
-        this.addnumber('9');
-        break;
-      case ',':
-        this.addcomma();
-        break;
-    }
-  }
-
-  addcomma() {
-    if (this.iscomma === false) {
-      this.iscomma = true;
-    } else {
-      this.iscomma = false;
-    }
-  }
-
-  addnumber(nbr: string) {
-    if (nbr === '0') {
-      if (this.newcursor === true) {
-        this.display = nbr;
-        this.newcursor = false;
-      } else if (this.display !== '0') {
-        if (this.iscomma === true) {
-          this.display = `${this.display.toString()}.${nbr}`;
-        } else {
-          this.display = this.display.toString() + nbr;
-        }
-      } else if (this.display === '0') {
-        if (this.iscomma === true) {
-          this.display = `${this.display.toString()}.${nbr}`;
-        }
-      }
-    } else {
-      if (this.newcursor === true) {
-        this.display = nbr;
-        this.newcursor = false;
-      } else if (this.display === '0') {
-        if (this.iscomma === true) {
-          if (this.display.toString().indexOf('.') > -1) {
-            this.display = this.display.toString() + nbr;
-          } else {
-            this.display = `${this.display.toString()}.${nbr}`;
-          }
-        } else {
-          this.display = nbr;
-        }
-      } else {
-        if (this.iscomma === true) {
-          if (this.display.toString().indexOf('.') > -1) {
-            this.display = this.display.toString() + nbr;
-          } else {
-            this.display = `${this.display.toString()}.${nbr}`;
-          }
-        } else {
-          this.display = this.display.toString() + nbr;
-        }
-      }
-    }
-    this.isc = true;
-  }
-
-  addpercent() {
-    this.iscomma = false;
-    const dispval = parseInt(this.display, 0) / 100;
-    this.display = dispval.toString();
-  }
-
-  addoperator(op: string) {
-    if (this.newcursor === false) {
-      if (this.firstval === null) {
-        if (this.iscomma === true) {
-          this.firstval = parseFloat(this.display);
-        } else {
-          this.firstval = parseInt(this.display, 0);
-        }
-      }
-      if (this.firstval !== null && this.operator !== null) {
-        this.calclast();
-      }
-    }
-    this.iscomma = false;
-    this.operator = op;
-    this.newcursor = true;
-  }
-
-  calclast() {
-    switch (this.operator) {
-      case ':':
-        if (this.iscomma === true) {
-          this.firstval = (this.firstval / parseFloat(this.display));
-        } else {
-          this.firstval = (this.firstval / parseInt(this.display, 0));
-        }
-        break;
-      case 'X':
-        if (this.iscomma === true) {
-          this.firstval = (this.firstval * parseFloat(this.display));
-        } else {
-          this.firstval = (this.firstval * parseInt(this.display, 0));
-        }
-        break;
-      case '-':
-        if (this.iscomma === true) {
-          this.firstval = (this.firstval - parseFloat(this.display));
-        } else {
-          this.firstval = (this.firstval - parseInt(this.display, 0));
-        }
-        break;
-      case '+':
-        if (this.iscomma === true) {
-          this.firstval = (this.firstval + parseFloat(this.display));
-        } else {
-          this.firstval = (this.firstval + parseInt(this.display, 0));
-        }
-        break;
-    }
-    this.display = this.firstval.toString();
   }
 
 }

@@ -6,8 +6,10 @@ import { StatusBar } from '@ionic-native/status-bar';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
-
+import { IonicStorageModule } from '@ionic/storage';
 import { NFC, Ndef } from '@ionic-native/nfc';
+import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
+
 @NgModule({
   declarations: [
     MyApp,
@@ -15,7 +17,8 @@ import { NFC, Ndef } from '@ionic-native/nfc';
   ],
   imports: [
     BrowserModule,
-    IonicModule.forRoot(MyApp)
+    IonicModule.forRoot(MyApp),
+    IonicStorageModule.forRoot()
   ],
   bootstrap: [IonicApp],
   entryComponents: [
@@ -25,7 +28,9 @@ import { NFC, Ndef } from '@ionic-native/nfc';
   providers: [
     StatusBar,
     SplashScreen,
+    IonicStorageModule,
     NFC, Ndef,
+    SQLite,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
 })
