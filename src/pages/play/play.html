@@ -1,7 +1,11 @@
 <ion-content [fullscreen]="true">
   <div class="calc-main">
     <div class="calc-display">
-      <ion-input type="number" [(ngModel)]="display" class="ion-text-end"></ion-input>
+      <ion-row>
+        <ion-col col-12>
+          <ion-input type="number" [(ngModel)]="display" style="color:black;"></ion-input>
+        </ion-col>
+      </ion-row>
     </div>
     <ion-grid>
       <ion-row>
@@ -95,7 +99,7 @@
         </ion-row>
         <ion-row>
           <ion-col>
-            <button ion-button color="dark" (click)="onNfc('history')" class="double-width square" [disabled]="disableButton">History</button>
+            <button ion-button color="dark" (click)="onHistory()" class="double-width square" [disabled]="disableButton">History</button>
           </ion-col>
         </ion-row>
         <ion-row>

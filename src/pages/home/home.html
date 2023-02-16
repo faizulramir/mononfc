@@ -13,9 +13,9 @@
         <ion-label  color="primary" fixed>Player Name</ion-label>
         <ion-input placeholder="Enter Name" [(ngModel)]="name"></ion-input>
       </ion-item>
-      <br>
+      <br *ngIf="!isReg">
       <button ion-button *ngIf="!isReg" color="dark" (click)="onNfc('register')" [disabled]="disableButton">Register</button>
-      <br>
+      <br *ngIf="!isReg">
       <button ion-button *ngIf="isReg" color="dark" (click)="newGame()">New Game</button>
       <br>
       <button ion-button *ngIf="isScan" class="square double-width" color="danger" (click)="cancelScan()"><b>Cancel Scan</b></button>

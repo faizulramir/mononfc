@@ -1,3 +1,28 @@
 page-history {
-
+    * {
+        box-sizing: border-box;
+      }
+      
+      .square-container {
+        padding: 8px;
+      }
+      
+      .square {
+        width: 50%;
+        float: left;
+        position: relative;
+        padding-bottom: 37%;
+      }
+      
+      .square .content {
+        border-radius: 10%;
+        width: calc(100% - 16px);
+        height: calc(100% - 16px);
+        margin: 8px;
+        padding: 16px;
+        position: absolute;
+        color: white;
+        background-color: #0095ff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26);
+      }
 }

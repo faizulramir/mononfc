@@ -20,7 +20,9 @@ export class HomePage {
   constructor(private sqlite: SQLite, public navCtrl: NavController, private nfc: NFC, public platform: Platform, public ndef: Ndef,  public toastCtrl: ToastController, public alertCtrl: AlertController, public actionSheetCtrl: ActionSheetController) {}
 
   ionViewWillEnter (){
-    this.initializeApp();
+    this.platform.ready().then(() => {
+      this.initializeApp();
+    });    
   }
 
   initializeApp() {
@@ -106,7 +108,7 @@ export class HomePage {
           .then((data) => console.log(JSON.stringify(data, null, 4)))
           .catch(e => console.log(JSON.stringify(e, null, 4)));
 
-        db.executeSql('INSERT INTO bank (amount, action) VALUES ("1500", "Initial Money")', [])
+        db.executeSql('INSERT INTO bank (amount, action) VALUES ("1500", "INITIAL")', [])
           .then((data) => console.log(JSON.stringify(data, null, 4)))
           .catch(e => console.log(JSON.stringify(e, null, 4)));
       })

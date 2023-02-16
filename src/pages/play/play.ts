@@ -3,12 +3,7 @@ import { Component } from '@angular/core';
 import { NFC, Ndef } from '@ionic-native/nfc';
 import { Platform, ToastController, AlertController, ActionSheetController } from 'ionic-angular';
 import { Subscription } from 'rxjs/Rx';
-/**
- * Generated class for the PlayPage page.
- *
- * See https://ionicframework.com/docs/components/#navigation for more info on
- * Ionic pages and navigation.
- */
+import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
 
 @IonicPage()
 @Component({
@@ -29,12 +24,16 @@ export class PlayPage {
   subscription: Subscription = new Subscription(); //manage on/off nfc scan --first time
   subscriptions: Array<Subscription> = new Array<Subscription>(); //manage on/off nfc scan
 
-  constructor(private nfc: NFC, public platform: Platform, public ndef: Ndef,  public toastCtrl: ToastController, public alertCtrl: AlertController, public actionSheetCtrl: ActionSheetController) {}
+  constructor(private nfc: NFC, public platform: Platform, public ndef: Ndef, public navCtrl: NavController,  public toastCtrl: ToastController, public alertCtrl: AlertController, public actionSheetCtrl: ActionSheetController, private sqlite: SQLite) {}
 
   onNfc(type: any) {
     this.isScan = true;
     this.disableButton = true
     this.checkPlatform(type)
+  }
+
+  onHistory()  {
+    this.navCtrl.push('HistoryPage', { animate: true, direction: "forward" });
   }
 
   checkPlatform(type:any) {
@@ -55,7 +54,21 @@ export class PlayPage {
     });    
   }
 
-  public onNfcRun(total) {
+  storeData(amount, action) {
+    this.sqlite.create({
+      name: 'data.db',
+      location: 'default'
+    })
+      .then((db: SQLiteObject) => {
+        let query = 'INSERT INTO bank (amount, action) VALUES ("'+ amount +'", "'+ action +'")'
+        db.executeSql(query, [])
+          .then((data) => console.log('Success!'))
+          .catch(e => console.log(JSON.stringify(e, null, 4)));
+      })
+      .catch(e => console.log(JSON.stringify(e, null, 4)));  
+  }
+
+  public onNfcRun(total, type) {
     total = total.toString();
     var message = [
       this.ndef.textRecord(total)
@@ -65,6 +78,7 @@ export class PlayPage {
       this.nfc.write(message);
       this.showToast("NFC:Success!");
       this.display = total.toString();
+      this.storeData(this.display, type)
       this.cancelScan();
       this.disableButton = false
     } catch(e) {
@@ -146,21 +160,29 @@ export class PlayPage {
       //console.log("nfcReadNdef: Read NDEF... tag ", event.tag);
       let ref:string = this.androidNdefListenerSuccess(event);
       var newarr = ref.split("en");
+      this.resetCalc();
       if (type == 'read') {
         this.display = newarr[1].toString();
       } else if (type == 'writeAdd') {
-        return this.onNfcRun(parseInt(this.display) + parseInt(newarr[1]));
+        return this.onNfcRun(parseInt(this.display) + parseInt(newarr[1]), 'ADD');
       } else if (type == 'writeDeduct') {
-        return this.onNfcRun(parseInt(this.display) - parseInt(newarr[1]));
+        return this.onNfcRun(parseInt(newarr[1]) - parseInt(this.display), 'DEDUCT');
       } else if (type == 'writeInit') {
-        return this.onNfcRun(1500);
+        return this.onNfcRun(1500, 'INITIAL');
       } else if (type == 'writePassGo') {
-        return this.onNfcRun(200 + parseInt(newarr[1]));
+        return this.onNfcRun(200 + parseInt(newarr[1]), 'PASS GO');
       }
       
       this.disableButton = false
     }
       
+  }
+
+  resetCalc() {
+    this.firstval = null;
+    this.operator = null;
+    this.newcursor = false;
+    this.isc = false;
   }
 
   public stopNFC(){
