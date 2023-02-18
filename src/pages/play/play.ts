@@ -206,6 +206,7 @@ export class PlayPage {
 
   cancelScan() {
     //console.log("cancelScan() ...");
+    this.disableButton = false
     this.ionViewWillLeave();
     this.ionViewDidEnter();
   }
