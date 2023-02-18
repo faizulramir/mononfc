@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NFC, Ndef } from '@ionic-native/nfc';
+import { NFC, Ndef } from '@awesome-cordova-plugins/nfc/ngx';
 import { Platform, NavController, ToastController, AlertController, ActionSheetController } from 'ionic-angular';
 import { Subscription } from 'rxjs/Rx';
 import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
@@ -151,8 +151,46 @@ export class HomePage {
             this.disableButton = false
           }, 1000);  
         });        
+      } else if (this.platform.is('ios')) {
+        //console.log("nfc: running on iOS device!");
+        this.nfc.enabled().then((flag) => {
+          this.isScan = true;
+          this.scanNFC_ios('1500');
+        }, (err) => {
+          this.cancelScan();
+          this.disableButton = false
+        });   
       }
     });    
+  }
+
+  async scanNFC_ios(total) {
+    try {
+      let tag = await this.nfc.scanTag({ keepSessionOpen: true});
+      console.log(tag.id);
+
+      if (tag.id) {
+        total = total.toString();
+        var message = [
+          this.ndef.textRecord(total)
+        ];
+
+        this.nfc.write(message);
+        this.showToast("NFC:Success!");
+        this.cancelScan();
+        this.disableButton = false;
+        this.createPlayer()
+        this.getData()
+      } else {
+        this.showToast("NFC:write_error");
+        this.cancelScan();
+        this.disableButton = false;
+      }
+    } catch (err) {
+      this.showToast("NFC:write_error");
+      this.cancelScan();
+      this.disableButton = false;
+    }
   }
 
   public onNfcRun(total) {

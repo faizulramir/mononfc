@@ -1,6 +1,6 @@
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Component } from '@angular/core';
-import { NFC, Ndef } from '@ionic-native/nfc';
+import { NFC, Ndef } from '@awesome-cordova-plugins/nfc/ngx';
 import { Platform, ToastController, AlertController, ActionSheetController } from 'ionic-angular';
 import { Subscription } from 'rxjs/Rx';
 import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
@@ -50,8 +50,98 @@ export class PlayPage {
             this.disableButton = false
           }, 1000);  
         });        
+      } else if (this.platform.is('ios')) {
+        //console.log("nfc: running on iOS device!");
+        this.nfc.enabled().then((flag) => {
+          this.isScan = true;
+          if (type == 'read') {
+            this.readNFC_ios();
+          } else {
+            this.scanNFC_ios(type);
+          }
+          
+        }, (err) => {
+          this.cancelScan();
+          this.disableButton = false
+        });   
       }
     });    
+  }
+
+  readNFC_ios () {
+    this.nfc.scanNdef().then(
+      tag => {
+          console.log(JSON.stringify(tag))
+          if (tag.ndefMessage) {
+            let payload = tag.ndefMessage[0].payload;
+            console.log(JSON.stringify(payload))
+            
+            if (payload){
+              let tagContent:string = this.nfc.bytesToString(payload);
+              var newarr = tagContent.split("en");
+              this.display = newarr[1].toString();
+            }
+          }
+          this.cancelScan()
+          this.disableButton = false         
+      },
+      err => {
+        if (err == 'Session invalidated by user') {
+          this.ionViewWillLeave();
+          this.ionViewDidEnter();
+        } else {
+          this.showToast("NFC:read_error");
+        }
+        this.cancelScan()
+        this.disableButton = false
+      }
+    );
+  }
+
+  async scanNFC_ios(type) {
+    try {
+      let data = await this.nfc.scanNdef({ keepSessionOpen: true});
+      let total = 0;
+      if (data.ndefMessage) {
+        let payload = data.ndefMessage[0].payload;
+
+        if (payload){
+          let tagContent:string = this.nfc.bytesToString(payload);
+          var newarr = tagContent.split("en");
+          this.resetCalc();
+          if (type == 'read') {
+            // this.display = newarr[1].toString();
+            // this.cancelScan();
+          } else if (type == 'writeAdd') {
+            return this.onNfcRunIos(parseInt(this.display) + parseInt(newarr[1]), 'ADD');
+          } else if (type == 'writeDeduct') {
+            return this.onNfcRunIos(parseInt(newarr[1]) - parseInt(this.display), 'DEDUCT');
+          } else if (type == 'writeInit') {
+            return this.onNfcRunIos(1500, 'INITIAL');
+          } else if (type == 'writePassGo') {
+            return this.onNfcRunIos(200 + parseInt(newarr[1]), 'PASS GO');
+          }
+          
+          this.disableButton = false
+        }
+      } else {
+        if (type == 'read') {
+          this.showToast("NFC:read_error");
+        } else {
+          this.showToast("NFC:write_error");
+        }
+        this.cancelScan();
+        this.disableButton = false;
+      }
+    } catch (err) {
+      if (type == 'read') {
+        this.showToast("NFC:read_error");
+      } else {
+        this.showToast("NFC:write_error");
+      }
+      this.cancelScan();
+      this.disableButton = false;
+    }
   }
 
   storeData(amount, action) {
@@ -83,6 +173,26 @@ export class PlayPage {
       this.disableButton = false
     } catch(e) {
       this.showToast("NFC:write_error");
+      this.cancelScan();
+      this.disableButton = false
+    }
+  }
+
+  public onNfcRunIos(total, type) {
+    total = total.toString();
+    var message = [
+      this.ndef.textRecord(total)
+    ];
+
+    try {
+      this.nfc.write(message);
+      this.showToast("NFC:Success!");
+      this.display = total.toString();
+      this.storeData(this.display, type)
+      this.cancelScan();
+      this.disableButton = false
+    } catch {
+      this.showToast("NFC:write_error!");
       this.cancelScan();
       this.disableButton = false
     }
@@ -206,6 +316,7 @@ export class PlayPage {
 
   cancelScan() {
     //console.log("cancelScan() ...");
+    this.disableButton = false
     this.ionViewWillLeave();
     this.ionViewDidEnter();
   }

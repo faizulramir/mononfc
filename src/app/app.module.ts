@@ -7,7 +7,7 @@ import { StatusBar } from '@ionic-native/status-bar';
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
 import { IonicStorageModule } from '@ionic/storage';
-import { NFC, Ndef } from '@ionic-native/nfc';
+import { NFC, Ndef } from '@awesome-cordova-plugins/nfc/ngx';
 import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
 
 @NgModule({
