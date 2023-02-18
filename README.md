@@ -1,14 +1,15 @@
 # MonoNFC
-Basically a NFC banker apps for Monopoly board games. No more money-on-hand! Go cashless!
+Basically a NFC calculator apps for any board games. No more money-on-hand! Go cashless!
 
 # How to build
 1. git clone https://github.com/faizulramir/mononfc.git.
 2. Run this command:
   ```
   npm install
-  ionic cordova platform add android
-  ionic cordova run android -l -c (livereload on emulator and consolelog)
-  ionic cordova build android (build *.apk)
+  ionic cordova prepare ios
+  ionic cordova resources
+  ionic cordova run ios -l -c --external
+  
   ```
 
 # Sample Image
